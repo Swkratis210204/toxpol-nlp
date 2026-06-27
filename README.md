@@ -35,18 +35,32 @@ can be validated against known ground truth.
 
 | File | Purpose |
 |---|---|
-| `polarization_dataset.py` | The library. Import `AnnotatorPool` from here. |
-| `Polarization_Dataset.ipynb` | Original notebook — quick demo and nDFU analysis. |
-| `polarizedtrees.ipynb` | Polarized Trees model experiments. |
-| `notes/datagen_approach.txt` | Design rationale for the data-generation pipeline. |
-| `notes/notes.txt` | Known limitations and design decisions. |
+| `polarizedtrees/datagen.py` | `AnnotatorPool` implementation — the data generation module. |
+| `polarizedtrees/__init__.py` | Package entry point — re-exports `AnnotatorPool`, `DEFAULT_DIMENSIONS`. |
+| `pyproject.toml` | Package metadata and dependencies. |
+| `demo.ipynb` | End-to-end demo: build pool → generate dataset → nDFU analysis → plots. |
+
+---
+
+## Install
+
+```bash
+# from GitHub (no PyPI release yet)
+pip install git+https://github.com/your-username/polarizedtrees.git
+
+# local development
+pip install -e .
+
+# with nDFU support (needed for the demo notebook)
+pip install -e ".[ndfu]"
+```
 
 ---
 
 ## Quickstart
 
 ```python
-from polarization_dataset import AnnotatorPool, DEFAULT_DIMENSIONS
+from polarizedtrees.datagen import AnnotatorPool, DEFAULT_DIMENSIONS
 
 # 1. Define (or reuse) demographic dimensions
 dimensions = {
@@ -202,8 +216,14 @@ If no polarizing dimension applies, the unimodal convergence is used as a fallba
 
 ## Dependencies
 
+Core (installed automatically):
 ```
 numpy
 pandas
-ndfu       # pip install ndfu  (for nDFU computation in the notebook)
+```
+
+Optional — nDFU analysis used in `demo.ipynb`:
+```bash
+pip install "polarizedtrees[ndfu]"
+# or separately: pip install ndfu
 ```
