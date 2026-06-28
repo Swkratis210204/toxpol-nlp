@@ -58,7 +58,7 @@ class AnnotatorPool:
 
     Examples
     --------
-    >>> from polarizedtrees.datagen import AnnotatorPool, DEFAULT_DIMENSIONS
+    >>> from toxpol.datagen import AnnotatorPool, DEFAULT_DIMENSIONS
     >>> pool = AnnotatorPool(DEFAULT_DIMENSIONS)
     >>> dataset, bias_config = pool.generate_dataset(n_texts=50, n_annotators_per_text=100)
     >>> dataset.head()
@@ -144,49 +144,6 @@ class AnnotatorPool:
                     "convergence": random.choice(["toxic", "civil", "neutral"]),
                 }
         return config
-
-    # ------------------------------------------------------------------
-    # Per-annotator rating
-    # ------------------------------------------------------------------
-
-    def _annotate(self, annotator, bias_config, noise=0.1):
-        """
-        Produce one rating for a single annotator given the active bias config.
-
-        Each polarizing dimension casts a vote (toxic or civil) based on which
-        pole the annotator's value falls in. The majority vote determines the
-        rating range. Unimodal dimensions serve as a fallback when no polarizing
-        dimension applies. With probability `noise`, a fully random rating is
-        returned instead, simulating genuine outlier disagreement.
-        """
-        votes = []
-        for dim, config in bias_config.items():
-            if config["role"] == "polarizing":
-                if annotator[dim] in config["toxic_pole"]:
-                    votes.append("toxic")
-                elif annotator[dim] in config["civil_pole"]:
-                    votes.append("civil")
-
-        if not votes:
-            for dim, config in bias_config.items():
-                if config["role"] == "unimodal":
-                    votes.append(config["convergence"])
-
-        toxic_votes = votes.count("toxic")
-        civil_votes = votes.count("civil")
-        neutral_votes = votes.count("neutral")
-
-        if toxic_votes > civil_votes and toxic_votes > neutral_votes:
-            rating_range = self.toxic_range
-        elif civil_votes > toxic_votes and civil_votes > neutral_votes:
-            rating_range = self.civil_range
-        else:
-            rating_range = self.neutral_range
-
-        if random.random() < noise:
-            return random.randint(1, self.scale)
-
-        return random.randint(*rating_range)
 
     # ------------------------------------------------------------------
     # Public API
@@ -335,7 +292,7 @@ class AnnotatorPool:
         """
         Compute nDFU scores for every text, overall and per dimension value.
 
-        Requires the `ndfu` package (`pip install polarizedtrees[ndfu]`).
+        Requires the `ndfu` package (`pip install toxpol-nlp[ndfu]`).
 
         Returns
         -------
@@ -348,7 +305,7 @@ class AnnotatorPool:
         except ImportError:
             raise ImportError(
                 "ndfu is required for analyze(). "
-                "Install it with: pip install polarizedtrees[ndfu]"
+                "Install it with: pip install toxpol-nlp[ndfu]"
             )
 
         def _ndfu(ratings):

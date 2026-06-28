@@ -1,7 +1,4 @@
-notes
-Polarization_Dataset.ipynb
-polarization_dataset.py
-polarizedtrees.ipynb
+notes/
 *.egg-info/
 __pycache__/
 dist/

@@ -3,16 +3,16 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "polarizedtrees"
-version = "0.1.5"
-description = "Synthetic annotation datasets and polarization detection for human label studies"
+name = "toxpol-nlp"
+version = "0.1.0"
+description = "NLP toolkit for toxicity and polarization research: synthetic datasets and detection algorithms"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
     { name = "SwkratisCS", email = "swkratisgiannoutsos@gmail.com" }
 ]
-keywords = ["annotation", "polarization", "synthetic data", "nlp", "disagreement"]
+keywords = ["toxicity", "polarization", "annotation", "synthetic data", "nlp", "disagreement", "crowdsourcing", "demographics"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
@@ -38,4 +38,4 @@ Repository = "https://github.com/SwkratisCS/polarizedtrees"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["polarizedtrees*"]
+include = ["toxpol*"]

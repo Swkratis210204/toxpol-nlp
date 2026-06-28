@@ -1,22 +1,29 @@
-# polarizedtrees
+# toxpol-nlp
 
-Synthetic annotation dataset generator for studying **demographic polarization in human labeling**.
+NLP toolkit for **toxicity and polarization research**. Provides tools for synthetic dataset generation and polarization detection in human annotation studies.
 
-Builds a pool of annotators from the Cartesian product of demographic dimensions, then generates structured disagreement: each dimension is randomly assigned as *polarizing* (splitting annotators into high/low rating poles) or *unimodal* (converging all annotators toward one range). Returns a flat DataFrame plus ground-truth bias config for evaluation.
+## Tools
+
+| Module | Description | Status |
+|---|---|---|
+| `toxpol.datagen` | Synthetic annotator pool with demographic polarization | Stable |
+| `toxpol.trees` | Polarized Trees detection algorithm | Coming soon |
 
 ## Install
 
 ```bash
-pip install polarizedtrees
+pip install toxpol-nlp
 
-# with nDFU support (for the demo notebook)
-pip install "polarizedtrees[ndfu]"
+# with nDFU support (for analysis methods)
+pip install "toxpol-nlp[ndfu]"
 ```
 
 ## Quickstart
 
+### Data Generation
+
 ```python
-from polarizedtrees.datagen import AnnotatorPool, DEFAULT_DIMENSIONS
+from toxpol.datagen import AnnotatorPool, DEFAULT_DIMENSIONS
 
 pool = AnnotatorPool(DEFAULT_DIMENSIONS)
 pool.summary()
@@ -32,7 +39,7 @@ dataset, bias_config = pool.generate_dataset(
 # dataset columns: text_id, annotator_id, <dimensions>, rating
 ```
 
-## API
+## API — `datagen`
 
 ### `AnnotatorPool(dimensions, ...)`
 
@@ -78,15 +85,9 @@ results = pool.analyze(dataset, bias_config)  # raw nDFU scores
 
 pool.summarize_all(dataset, bias_config)
 # Overall nDFU — mean: 0.721  min: 0.431  max: 0.963  (across 100 texts)
-#
-# gender (polarizing):
-#   male            mean: 0.312  min: 0.077  max: 0.833
-#   female          mean: 0.541  min: 0.083  max: 0.917
-#   non-binary      mean: 0.448  min: 0.067  max: 0.916
-# ...
 ```
 
-`analyze()`, `summarize()`, and `summarize_all()` require `pip install "polarizedtrees[ndfu]"`.
+`analyze()`, `summarize()`, and `summarize_all()` require `pip install "toxpol-nlp[ndfu]"`.
 
 ## Dimensions
 
@@ -112,9 +113,3 @@ pool = AnnotatorPool({
 })
 # 6 identities → 60 annotators
 ```
-
-<!-- ## Known limitations
-
-- **Balanced splits** — the pole assignment produces roughly 50/50 toxic/civil splits; real polarization is often asymmetric.
-- **No interaction effects** — dimensions contribute independently; a specific value *combination* cannot carry disproportionate weight.
-- **Single bias config per call** — all texts share one polarization structure; call `generate_dataset()` separately per topic to vary this. -->
