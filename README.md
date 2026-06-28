@@ -1,5 +1,9 @@
 # toxpol-nlp
 
+![Python](https://img.shields.io/badge/python-3.9%20|%203.10%20|%203.11%20|%203.12-blue)
+
+
+
 NLP toolkit for **toxicity and polarization research**. Provides tools for synthetic dataset generation and polarization detection in human annotation studies.
 
 ## Install
