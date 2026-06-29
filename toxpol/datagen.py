@@ -52,6 +52,25 @@ class AnnotatorPool:
         Mapping from dimension name to the list of possible values.
         Example: {"politics": ["left", "center", "right"], "age": ["<25", ">25"]}
 
+    scale : int
+        Maximum value on the rating scale (ratings are integers in [1, scale]).
+        Mandatory -- there is no default, since Moderate/Low ranges are
+        derived from it.
+
+    toxic_range : tuple[int, int]
+        (low, high) inclusive range from which High-tier toxic-pole annotators
+        draw ratings. Mandatory -- also used as the basis for deriving the
+        Moderate and Low tiers' toxic ranges.
+
+    civil_range : tuple[int, int]
+        (low, high) inclusive range from which High-tier civil-pole annotators
+        draw ratings. Mandatory -- also used as the basis for deriving the
+        Moderate and Low tiers' civil ranges.
+
+    neutral_range : tuple[int, int]
+        Mandatory. Reserved for future use; not currently sampled from
+        directly.
+
     exclude : list[str] | None
         Dimension names to drop before building identities. Useful for ablations.
 
@@ -59,22 +78,13 @@ class AnnotatorPool:
         How many annotators share each unique demographic combination.
         Pool size = product(len(v) for v in dimensions.values()) * annotators_per_identity.
 
-    scale : int
-        Maximum value on the rating scale (ratings are integers in [1, scale]).
-
-    toxic_range : tuple[int, int]
-        (low, high) inclusive range from which High-tier toxic-pole annotators draw ratings.
-
-    civil_range : tuple[int, int]
-        (low, high) inclusive range from which High-tier civil-pole annotators draw ratings.
-
-    neutral_range : tuple[int, int]
-        Reserved for future use; not currently sampled from directly.
-
     Examples
     --------
     >>> from toxpol.datagen import AnnotatorPool, DEFAULT_DIMENSIONS
-    >>> pool = AnnotatorPool(DEFAULT_DIMENSIONS)
+    >>> pool = AnnotatorPool(
+    ...     DEFAULT_DIMENSIONS, scale=5,
+    ...     toxic_range=(4, 5), civil_range=(1, 2), neutral_range=(3, 3),
+    ... )
     >>> dataset, bias_configs = pool.generate_dataset(n_texts=50, n_annotators_per_text=100)
     >>> dataset.head()
     """
@@ -82,12 +92,12 @@ class AnnotatorPool:
     def __init__(
         self,
         dimensions,
+        scale,
+        toxic_range,
+        civil_range,
+        neutral_range,
         exclude=None,
         annotators_per_identity=10,
-        scale=5,
-        toxic_range=(4, 5),
-        civil_range=(1, 2),
-        neutral_range=(3, 3),
     ):
         self.annotators_per_identity = annotators_per_identity
         self.identities, self.active_dims = self._get_identities(dimensions, exclude)
@@ -97,6 +107,28 @@ class AnnotatorPool:
         self.toxic_range = toxic_range
         self.civil_range = civil_range
         self.neutral_range = neutral_range
+
+        # Moderate/Low ranges are derived from the user's own toxic_range /
+        # civil_range, shifted toward the center by a step proportional to
+        # scale (reproduces a shift of exactly 1 at scale=5). No separate
+        # parameters needed -- Moderate and Low are progressively softer
+        # versions of whatever strictness the user chose for High.
+        step = max(1, round(self.scale / 5))
+
+        self.moderate_toxic_range = self.toxic_range
+        self.moderate_civil_range = (
+            self.civil_range[0],
+            min(self.toxic_range[0] - 1, self.civil_range[1] + step),
+        )
+
+        self.low_toxic_range = (
+            max(self.civil_range[1] + 1, self.toxic_range[0] - step),
+            self.toxic_range[1],
+        )
+        self.low_civil_range = (
+            self.civil_range[0],
+            min(self.toxic_range[1] - 1, self.civil_range[1] + step),
+        )
 
     # ------------------------------------------------------------------
     # Pool construction
@@ -271,10 +303,10 @@ class AnnotatorPool:
                 toxic_range, civil_range = self.toxic_range, self.civil_range
                 subcase = None
             elif tier == "moderate":
-                toxic_range, civil_range = (4, 5), (1, 3)
+                toxic_range, civil_range = self.moderate_toxic_range, self.moderate_civil_range
                 subcase = None
             else:  # low, weighted sub-case
-                toxic_range, civil_range = (3, 5), (1, 3)
+                toxic_range, civil_range = self.low_toxic_range, self.low_civil_range
                 subcase = "weighted"
 
             bias_configs[text_id] = {
@@ -312,9 +344,13 @@ class AnnotatorPool:
         print(f"Annotators/identity: {self.annotators_per_identity}")
         print(f"Pool size          : {self.pool_size}")
         print(f"Rating scale       : 1-{self.scale}")
-        print(f"  toxic_range      : {self.toxic_range}")
-        print(f"  civil_range      : {self.civil_range}")
-        print(f"  neutral_range    : {self.neutral_range}")
+        print(f"  toxic_range          (high)     : {self.toxic_range}")
+        print(f"  civil_range          (high)     : {self.civil_range}")
+        print(f"  neutral_range                   : {self.neutral_range}")
+        print(f"  toxic_range          (moderate) : {self.moderate_toxic_range}")
+        print(f"  civil_range          (moderate) : {self.moderate_civil_range}")
+        print(f"  toxic_range          (low)      : {self.low_toxic_range}")
+        print(f"  civil_range          (low)      : {self.low_civil_range}")
 
     def describe_bias(self, bias_configs, text_id=0):
         """Pretty-print one text's bias config (tier, sub-case, weights) as a readable table."""
